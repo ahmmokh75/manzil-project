@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANZIL PROJECTS - Saudi Real Estate Management</title>
+    <style>
+        /* جميع الأنماط السابقة تبقى كما هي */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* باقي الأنماط تبقى كما هي */
+        
+        /* إضافة أنماط جديدة للتنبيهات */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #00a86b;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+            max-width: 300px;
+        }
+        
+        .notification.error {
+            background: #ff6b6b;
+        }
+        
+        .notification.warning {
+            background: #ff9900;
+        }
+        
+        .sync-status {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+        
+        .auto-save-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #00a86b;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <!-- إضافة منطقة التنبيهات -->
+    <div class="notification" id="notification"></div>
+    <div class="sync-status" id="syncStatus">Auto-save: ON</div>
+    
+    <div class="container">
+        <header>
+            <h1>MANZIL PROJECTS</h1>
+            <p class="project-info">Manage all your real estate projects in Saudi cities</p>
+            <div style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8;">
+                <span id="lastSaved">Last saved: Never</span>
+            </div>
+        </header>
+        
+        <!-- لوحة المصادقة -->
+        <div class="auth-panel" id="authPanel">
+            <h2 class="auth-title">🔐 Authentication Required</h2>
+            <p>Enter password to enable editing features</p>
+            <input type="password" class="auth-input" id="passwordInput" placeholder="Enter password">
+            <button class="auth-btn" id="authBtn">Authenticate</button>
+            <div class="auth-message" id="authMessage"></div>
+            <div class="auto-save-toggle">
+                <span>Auto-save:</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoSaveToggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- باقي الكود يبقى كما هو -->
+        
+    </div>
+    
+    <!-- توقيع Ahmed Mokhtar -->
+    <div class="signature">
+        By: <span>Ahmed Mokhtar | Operations Team 2025 © </span>
+    </div>
+
+    <script>
+        // البيانات الأساسية للتطبيق
+        let cities = [
+            {
+                id: 1,
+                name: "Riyadh",
+                totalProjects: 27,
+                color: "riyadh",
+                description: "The capital and largest city of Saudi Arabia"
+            },
+            {
+                id: 2,
+                name: "Jeddah", 
+                totalProjects: 11,
+                color: "jeddah",
+                description: "Major urban center and port on the Red Sea"
+            },
+            {
+                id: 3,
+                name: "Dammam",
+                totalProjects: 4,
+                color: "dammam",
+                description: "Capital of the Eastern Province and important port city"
+            }
+        ];
+
+        let projectGroups = {
+            riyadh: [
+                {
+                    id: 1,
+                    name: "SLY",
+                    description: "AS SULY PROJECTS",
+                    totalProjects: 5,
+                    totalBeds: 0,
+                    centralKitchen: true,
+                    type: "sly"
+                },
+                {
+                    id: 2,
+                    name: "UMH", 
+                    description: "UMM AL HAMMAM PROJECTS",
+                    totalProjects: 7,
+                    totalBeds: 0,
+                    centralKitchen: false,
+                    type: "umh"
+                }
+            ],
+            jeddah: [
+                {
+                    id: 1,
+                    name: "HAM",
+                    description: "Al Hamadaniyyah Projects",
+                    totalProjects: 1,
+                    totalBeds: 0,
+                    centralKitchen: false,
+                    type: "ham"
+                }
+            ],
+            dammam: [
+                {
+                    id: 1,
+                    name: "KJH",
+                    description: "Al Khalidiyyah Al Janubiyyah Projects",
+                    totalProjects: 2,
+                    totalBeds: 0,
+                    centralKitchen: false,
+                    type: "kjh"
+                }
+            ]
+        };
+
+        let projects = {
+            sly: [
+                {
+                    id: 1,
+                    name: "SLY-1001",
+                    location: "Riyadh - Al Sulay District",
+                    totalApartments: 35,
+                    totalBathrooms: 68,
+                    totalBeds: 0,
+                    centralKitchen: true,
+                    floors: ["Ground Floor", "First Floor", "Second Floor"],
+                    apartments: []
+                },
+                {
+                    id: 2,
+                    name: "SLY-1002", 
+                    location: "Riyadh - Al Sulay District",
+                    totalApartments: 19,
+                    totalBathrooms: 38,
+                    totalBeds: 0,
+                    centralKitchen: true,
+                    floors: ["Ground Floor", "First Floor", "Second Floor"],
+                    apartments: []
+                }
+            ],
+            umh: [
+                {
+                    id: 3,
+                    name: "UMH-1003",
+                    location: "Riyadh - Umm Al Hamam District", 
+                    totalApartments: 14,
+                    totalBathrooms: 28,
+                    totalBeds: 0,
+                    centralKitchen: false,
+                    floors: ["Ground Floor", "First Floor", "Second Floor"],
+                    apartments: []
+                }
+            ]
+        };
+
+        // DOM Elements
+        const citiesPage = document.getElementById('citiesPage');
+        const projectGroupsPage = document.getElementById('projectGroupsPage');
+        const projectsPage = document.getElementById('projectsPage');
+        const apartmentsPage = document.getElementById('apartmentsPage');
+        const citiesContainer = document.getElementById('citiesContainer');
+        const projectGroupsContainer = document.getElementById('projectGroupsContainer');
+        const projectsContainer = document.getElementById('projectsContainer');
+        const floorsContainer = document.getElementById('floorsContainer');
+        const floorManagement = document.getElementById('floorManagement');
+        const floorList = document.getElementById('floorList');
+        const newFloorName = document.getElementById('newFloorName');
+        const addFloorBtn = document.getElementById('addFloorBtn');
+        const backToCities = document.getElementById('backToCities');
+        const backToProjectGroups = document.getElementById('backToProjectGroups');
+        const backToProjects = document.getElementById('backToProjects');
+        const cityTitle = document.getElementById('cityTitle');
+        const cityDetails = document.getElementById('cityDetails');
+        const groupTitle = document.getElementById('groupTitle');
+        const groupDetails = document.getElementById('groupDetails');
+        const projectTitle = document.getElementById('projectTitle');
+        const projectDetails = document.getElementById('projectDetails');
+        const apartmentDetails = document.getElementById('apartmentDetails');
+        const detailsTitle = document.getElementById('detailsTitle');
+        const detailsContent = document.getElementById('detailsContent');
+        const closeDetails = document.getElementById('closeDetails');
+        const breadcrumb = document.getElementById('breadcrumb');
+        const totalCities = document.getElementById('totalCities');
+        const totalProjects = document.getElementById('totalProjects');
+        const totalApartments = document.getElementById('totalApartments');
+        const totalBeds = document.getElementById('totalBeds');
+
+        // عناصر لوحة التحكم والمصادقة
+        const authPanel = document.getElementById('authPanel');
+        const passwordInput = document.getElementById('passwordInput');
+        const authBtn = document.getElementById('authBtn');
+        const authMessage = document.getElementById('authMessage');
+        const adminPanel = document.getElementById('adminPanel');
+        const addCity = document.getElementById('addCity');
+        const addGroup = document.getElementById('addGroup');
+        const addProject = document.getElementById('addProject');
+        const saveData = document.getElementById('saveData');
+        const loadData = document.getElementById('loadData');
+        const cityForm = document.getElementById('cityForm');
+        const groupForm = document.getElementById('groupForm');
+        const projectForm = document.getElementById('projectForm');
+        const saveCity = document.getElementById('saveCity');
+        const cancelCity = document.getElementById('cancelCity');
+        const saveGroup = document.getElementById('saveGroup');
+        const cancelGroup = document.getElementById('cancelGroup');
+        const saveProject = document.getElementById('saveProject');
+        const cancelProject = document.getElementById('cancelProject');
+
+        // عناصر جديدة
+        const notification = document.getElementById('notification');
+        const syncStatus = document.getElementById('syncStatus');
+        const lastSaved = document.getElementById('lastSaved');
+        const autoSaveToggle = document.getElementById('autoSaveToggle');
+        const exportData = document.getElementById('exportData');
+        const importData = document.getElementById('importData');
+
+        // Current navigation state
+        let currentCity = null;
+        let currentGroup = null;
+        let currentProject = null;
+        let editMode = false;
+        let autoSaveEnabled = true;
+        const PASSWORD = "888";
+
+        // وظائف المصادقة
+        function authenticate() {
+            const password = passwordInput.value;
+            
+            if (password === PASSWORD) {
+                editMode = true;
+                authPanel.classList.add('hidden');
+                adminPanel.classList.remove('hidden');
+                authMessage.textContent = '';
+                passwordInput.value = '';
+                
+                // إعادة عرض المحتوى الحالي مع أزرار التعديل
+                if (!citiesPage.classList.contains('hidden')) {
+                    renderCities();
+                } else if (!projectGroupsPage.classList.contains('hidden')) {
+                    renderProjectGroups(currentCity);
+                } else if (!projectsPage.classList.contains('hidden')) {
+                    renderProjects(currentGroup);
+                } else if (!apartmentsPage.classList.contains('hidden')) {
+                    renderApartments(currentProject);
+                }
+                
+                showNotification('Authentication successful! Editing features are now enabled.', 'success');
+            } else {
+                authMessage.textContent = 'Incorrect password. Please try again.';
+                passwordInput.value = '';
+                showNotification('Incorrect password. Please try again.', 'error');
+            }
+        }
+
+        // وظيفة عرض التنبيهات
+        function showNotification(message, type = 'success') {
+            notification.textContent = message;
+            notification.className = 'notification';
+            if (type === 'error') {
+                notification.classList.add('error');
+            } else if (type === 'warning') {
+                notification.classList.add('warning');
+            }
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 4000);
+        }
+
+        // وظيفة تحديث حالة الحفظ
+        function updateLastSaved() {
+            const now = new Date();
+            lastSaved.textContent = `Last saved: ${now.toLocaleString()}`;
+        }
+
+        // وظيفة حفظ البيانات مع التنبيه
+        function saveToLocalStorage() {
+            if (!autoSaveEnabled) return;
+            
+            try {
+                const appData = {
+                    cities: cities,
+                    projectGroups: projectGroups,
+                    projects: projects,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('manzilProjectsData', JSON.stringify(appData));
+                updateLastSaved();
+                showNotification('Data saved successfully!', 'success');
+            } catch (error) {
+                console.error('Error saving data:', error);
+                showNotification('Error saving data!', 'error');
+            }
+        }
+
+        // وظيفة تصدير البيانات
+        function exportAppData() {
+            const appData = {
+                cities: cities,
+                projectGroups: projectGroups,
+                projects: projects,
+                exportedAt: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(appData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `manzil-projects-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showNotification('Data exported successfully!', 'success');
+        }
+
+        // وظيفة استيراد البيانات
+        function importAppData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    if (confirm('Are you sure you want to import this data? This will replace all current data.')) {
+                        cities = importedData.cities || cities;
+                        projectGroups = importedData.projectGroups || projectGroups;
+                        projects = importedData.projects || projects;
+                        
+                        initializeStats();
+                        showCitiesPage();
+                        saveToLocalStorage();
+                        
+                        showNotification('Data imported successfully!', 'success');
+                    }
+                } catch (error) {
+                    console.error('Error importing data:', error);
+                    showNotification('Error importing data! Invalid file format.', 'error');
+                }
+            };
+            reader.readAsText(file);
+            
+            // إعادة تعيين حقل الإدخال للسماح باستيراد نفس الملف مرة أخرى
+            event.target.value = '';
+        }
+
+        // وظيفة التبديل التلقائي للحفظ
+        function toggleAutoSave() {
+            autoSaveEnabled = !autoSaveEnabled;
+            autoSaveToggle.checked = autoSaveEnabled;
+            syncStatus.textContent = `Auto-save: ${autoSaveEnabled ? 'ON' : 'OFF'}`;
+            syncStatus.style.background = autoSaveEnabled ? 'rgba(0, 168, 107, 0.8)' : 'rgba(255, 107, 107, 0.8)';
+            
+            showNotification(`Auto-save ${autoSaveEnabled ? 'enabled' : 'disabled'}`, 
+                           autoSaveEnabled ? 'success' : 'warning');
+        }
+
+        // Initialize statistics
+        function initializeStats() {
+            totalCities.textContent = cities.length;
+            
+            let totalProjectsCount = 0;
+            let totalApartmentsCount = 0;
+            let totalBedsCount = 0;
+            
+            // Calculate totals
+            for (const city in projectGroups) {
+                projectGroups[city].forEach(group => {
+                    totalProjectsCount += group.totalProjects;
+                });
+            }
+            
+            for (const group in projects) {
+                projects[group].forEach(project => {
+                    totalApartmentsCount += project.totalApartments;
+                    totalBedsCount += project.totalBeds;
+                });
+            }
+            
+            totalProjects.textContent = totalProjectsCount;
+            totalApartments.textContent = totalApartmentsCount;
+            totalBeds.textContent = totalBedsCount;
+        }
+
+        // باقي الوظائف تبقى كما هي مع إضافة saveToLocalStorage() بعد كل تعديل
+        
+        // Event Listeners
+        backToCities.addEventListener('click', showCitiesPage);
+        backToProjectGroups.addEventListener('click', () => {
+            if (currentCity) {
+                showCityProjectGroups(currentCity);
+            }
+        });
+        backToProjects.addEventListener('click', () => {
+            if (currentCity && currentGroup) {
+                showGroupProjects(currentGroup, currentCity.name);
+            }
+        });
+        closeDetails.addEventListener('click', () => {
+            apartmentDetails.style.display = 'none';
+        });
+
+        // أحداث المصادقة
+        authBtn.addEventListener('click', authenticate);
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                authenticate();
+            }
+        });
+
+        // أحداث جديدة
+        autoSaveToggle.addEventListener('change', toggleAutoSave);
+        exportData.addEventListener('click', exportAppData);
+        importData.addEventListener('click', () => {
+            document.getElementById('importFile').click();
+        });
+
+        // إنشاء عنصر إدخال ملف مخفي لاستيراد البيانات
+        const importFileInput = document.createElement('input');
+        importFileInput.type = 'file';
+        importFileInput.accept = '.json';
+        importFileInput.id = 'importFile';
+        importFileInput.style.display = 'none';
+        importFileInput.addEventListener('change', importAppData);
+        document.body.appendChild(importFileInput);
+
+        // Initialize
+        initializeStats();
+        showCitiesPage();
+
+        // محاولة تحميل البيانات المحفوظة تلقائياً
+        window.addEventListener('load', () => {
+            const savedData = localStorage.getItem('manzilProjectsData');
+            if (savedData) {
+                try {
+                    const appData = JSON.parse(savedData);
+                    cities = appData.cities || cities;
+                    projectGroups = appData.projectGroups || projectGroups;
+                    projects = appData.projects || projects;
+                    
+                    if (appData.lastUpdated) {
+                        lastSaved.textContent = `Last saved: ${new Date(appData.lastUpdated).toLocaleString()}`;
+                    }
+                    
+                    initializeStats();
+                    renderCities();
+                    showNotification('Data loaded successfully!', 'success');
+                } catch (error) {
+                    console.log('Error loading saved data:', error);
+                    showNotification('Error loading saved data!', 'error');
+                }
+            }
+        });
+
+        // حفظ تلقائي عند إغلاق الصفحة
+        window.addEventListener('beforeunload', () => {
+            if (editMode && autoSaveEnabled) {
+                saveToLocalStorage();
+            }
+        });
+
+        console.log('MANZIL PROJECTS System initialized successfully!');
+    </script>
+</body>
+</html>
